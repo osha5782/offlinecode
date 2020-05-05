@@ -1,0 +1,92 @@
+-----------------------------------
+## PACKAGE IMPORTS
+
+# Batch normalisation
+from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout
+
+# Keras Call Backs
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+
+# Optimisers
+from keras.optimizers import 
+
+# Losses
+from segmentation_models.losses import bce_jaccard_loss
+from segmentation_models.losses import DiceLoss
+from segmentation_models.losses import BinaryCELoss
+from segmentation_models.losses import CategoricalCELoss
+from segmentation_models.losses import BinaryFocalLoss
+
+
+
+----------------------------------------
+## DATA GENERATION
+
+# Batch SHUFFLING
+    shuffle_batches = True                  # Option whether batch order should be shuffled or not
+    initialization_weights = None           # Neural Network model weights for weight reinitialization
+
+# Code seems to be missing variable img_folder and mask_folder
+img_folder = xtrain_dir
+mask_folder = ytrain_dir
+
+# Check if training data looks all right 
+#... to find
+
+
+
+--------------------------------
+## TRAINING
+
+# Optimisers
+optimizer = Adam()
+
+# Loss functions - if using class weighting; (class_weights = weights) --> weights defined above
+loss = sm.losses.DiceLoss()
+
+
+-------------------------------
+## MODEL
+
+# Model template with all possible things to fill in
+model = Unet(backbone_name=____, input_shape=(__,__,__), classes=__, activation=____, weights=___, encoder_weights=___, encoder_freeze=___, encoder_features=____, decoder_block_type=____, decoder_filters=(__,__,__,__,__), decoder_use_batchnorm=___)
+
+# backbone_name
+backbone_name='vgg16'
+
+# input_shape=(h,w,c) --> image size, input images must be divisible by factor of 32
+input_shape=(image_size, image_size, 1)
+
+# classes
+classes=1
+
+# activation
+activation = sigmoid   #use sigmoid for binary
+activation = softmax
+activation = linear
+
+# weights (optional)
+weights = weightedclasses   #path to model weights
+
+# encoder_weights
+encoder_weights = None      #random initialisation
+encoder_weights = imagenet  #pre-training on ImageNet
+
+# encoder_freeze
+encoder_freeze = True    # set all layers of encoder as non-trainable
+encoder_freeze = False   # let all layers be trained
+
+# encoder_features
+encoder_features = 'default'  #lists layer numbers or names
+
+# decoder_block_type
+decoder_block_type='upsampling'    #depooling
+decoder_block_type='transpose'     #deconvolution
+
+# decoder_filters
+decoder_filters=(256,128,64,32,16)   # list of numbers over conv2d layer filters in decoder blocks
+
+#decoder_use_batchnorm
+decoder_use_batchnorm=True  # BatchNormalisation layer between Conv2D and Activation layers is used
+decoder_use_batchnorm=False # batchnorm not used
+    
