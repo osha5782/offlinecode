@@ -11,11 +11,22 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, C
 from keras.optimizers import 
 
 # Losses
-from segmentation_models.losses import bce_jaccard_loss
-from segmentation_models.losses import DiceLoss
-from segmentation_models.losses import BinaryCELoss
-from segmentation_models.losses import CategoricalCELoss
-from segmentation_models.losses import BinaryFocalLoss
+from segmentation_models.losses import jaccard_loss
+from segmentation_models.losses import dice_loss
+from segmentation_models.losses import binary_focal_loss
+from segmentation_models.losses import categorical_focal_loss
+from segmentation_models.losses import binary_crossentropy
+from segmentation_models.losses import categorical_crossentropy
+
+# Loss combinations - check the correct calling of these
+from segmentation_models.losses import bce_dice_loss       #= binary_crossentropy + dice_loss
+from segmentation_models.losses import bce_jaccard_loss    #= binary_crossentropy + jaccard_loss
+from segmentation_models.losses import cce_dice_loss       #= categorical_crossentropy + dice_loss
+from segmentation_models.losses import cce_jaccard_loss    #= categorical_crossentropy + jaccard_loss
+from segmentation_models.losses import binary_focal_dice_loss       #= binary_focal_loss + dice_loss
+from segmentation_models.losses import binary_focal_jaccard_loss    #= binary_focal_loss + jaccard_loss
+from segmentation_models.losses import categorical_focal_dice_loss  #= categorical_focal_loss + dice_loss
+from segmentation_models.losses import categorical_focal_jaccard_loss   #= categorical_focal_loss + jaccard_loss
 
 
 
@@ -42,7 +53,12 @@ mask_folder = ytrain_dir
 optimizer = Adam()
 
 # Loss functions - if using class weighting; (class_weights = weights) --> weights defined above
+loss = sm.losses.JaccardLoss()
 loss = sm.losses.DiceLoss()
+loss = sm.losses.BinaryFocalLoss()
+loss = sm.losses.CategoricalFocalLoss()
+loss = sm.losses.BinaryCELoss()
+loss = sm.losses.CategoricalCELoss()
 
 
 -------------------------------
@@ -89,4 +105,13 @@ decoder_filters=(256,128,64,32,16)   # list of numbers over conv2d layer filters
 #decoder_use_batchnorm
 decoder_use_batchnorm=True  # BatchNormalisation layer between Conv2D and Activation layers is used
 decoder_use_batchnorm=False # batchnorm not used
-    
+
+
+------------------------------
+## ANALYSING THE MODEL OUTPUTS
+
+# Load the best model
+model.load_weights('______')   #the name returned from the weights_path function (Weights/{save_path}.h5)
+
+# Evaluate on validation set
+model.evaluate(
