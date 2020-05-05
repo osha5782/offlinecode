@@ -2,13 +2,13 @@
 ## PACKAGE IMPORTS
 
 # Batch normalisation
-from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout
+from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout, Flatten, AveragePooling2D, Conv2D, GlobalAveragePooling2D
 
 # Keras Call Backs
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
 
 # Optimisers
-from keras.optimizers import 
+from keras.optimizers import Adam, SGD
 
 # Losses
 from segmentation_models.losses import jaccard_loss
@@ -28,6 +28,10 @@ from segmentation_models.losses import binary_focal_jaccard_loss    #= binary_fo
 from segmentation_models.losses import categorical_focal_dice_loss  #= categorical_focal_loss + dice_loss
 from segmentation_models.losses import categorical_focal_jaccard_loss   #= categorical_focal_loss + jaccard_loss
 
+# Data augmentations
+from albumentations import (Compose, HorizontalFlip, ElasticTransform, GridDistortion, OneOf, CLAHE, RandomBrightnessContrast, RandomGamma)
+
+
 
 
 ----------------------------------------
@@ -41,16 +45,12 @@ from segmentation_models.losses import categorical_focal_jaccard_loss   #= categ
 img_folder = xtrain_dir
 mask_folder = ytrain_dir
 
-# Check if training data looks all right 
-#... to find
-
-
 
 --------------------------------
 ## TRAINING
 
 # Optimisers
-optimizer = Adam()
+opt = Adam()
 
 # Loss functions - if using class weighting; (class_weights = weights) --> weights defined above
 loss = sm.losses.JaccardLoss()
@@ -60,6 +60,9 @@ loss = sm.losses.CategoricalFocalLoss()
 loss = sm.losses.BinaryCELoss()
 loss = sm.losses.CategoricalCELoss()
 
+# Performance
+IOU = sm.metrics.IOUScore()
+Fscore = sm.metrics.FScore()
 
 -------------------------------
 ## MODEL
