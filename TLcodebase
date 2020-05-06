@@ -68,9 +68,9 @@ from sklearn.metrics import roc_curve, roc_auc_score, auc, jaccard_score
 # Keras
 from keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from keras.layers import Input, Dropout, Flatten, Dense, AveragePooling2D, Conv2D, GlobalAveragePooling2D, BatchNormalization, Flatten, Activation
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adagrad, Adadelta
 from keras.models import Model
-from keras.utils import to_categorical
+from keras.models import load_model
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping, ReduceLROnPlateau, CSVLogger
 
 # Albumentations
@@ -139,8 +139,8 @@ momentum = 0.0
 # Optimiser - CHOOSE 1
 opt = Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, amsgrad=False)
 opt = SGD(learning_rate=learning_rate, momentum=momentum, nesterov=False)
-opt = Adagrad(learning_rate=0.01)                # 0.01 recommended initial lr default
-opt = Adadelta(learning_rate=1, rho=0.95)        # 1 recommended initial lr default
+opt = Adagrad()                # recommended to leave defaults
+opt = Adadelta()               # recommends to leave defaults
 
 # Performance
 IOU = sm.metrics.IOUScore()
@@ -172,7 +172,7 @@ xtest_dir = 'Images/Test'
 save_path = f'Unet.{backbone}.{weight_initialisation}.b{batch_size}.e{epochs}.LR{learning_rate}.da{da}
 
 # Path where resulting weights will be saved
-weights_path = (f'Weights/{save_path}.h5')
+weights_path = f'Weights/{save_path}.h5'
 
 
 -----------------------------------------
@@ -330,7 +330,10 @@ model = Model(inp, out, name=base_model.name)
 -----------------------------------------        
 ## SECTION 10: COMPILE MODEL
 
-model.compile(opt, loss=loss, metrics=metrics) 
+model.compile(optimizer=opt, loss=loss, metrics=metrics) 
+
+# Model summary
+model.summary()
 
 
 -----------------------------------------        
