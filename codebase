@@ -96,6 +96,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = 1
 weight_initialisation = RI   # randomly initialised
 weight_initialisation = TL   # transfer learning
 
+# Class distinction
+class_dict = {0: 'BG', 1:'SB'}
+
 # Model variables
 backbone = vgg16
 image_size = 256    # call image_size as variable for both h and w 
@@ -149,7 +152,6 @@ aug = yes
 aug = no
 
 
-
 -----------------------------------------
 ## SECTION 3: DEFINE PATHS
 
@@ -174,7 +176,95 @@ save_path = f'Unet.{backbone}.w{weight_initialisation}.b{batch_size}.e{epochs}.L
 
 
 
+-----------------------------------------
+## SECTION 4: AUGMENTATIONS
 
+aug = Compose([OneOf([
+        ElasticTransform(p=1, alpha=200, sigma=200 * 0.05, alpha_affine=200 * 0.03),
+        GridDistortion(p=1, border_mode=0, value=5)], p=0.8),
+    CLAHE(p=0.8),
+    HorizontalFlip(p=0.5),
+    RandomBrightnessContrast(p=0.8),    
+    RandomGamma(p=0.8)])
+
+
+-----------------------------------------
+## SECTION 5: DATA GENERATOR - TRAINING
+
+def data_gen(img_folder, mask_folder, batch_size=batch_size, image_size=image_size, classes=classes):
+    c=0
+    n=os.listdir(img_folder)
+    random.shuffle(n)
+    
+    while (True):
+        img = np.zeros((batch_size, image_size, image_size, 1)).astype('float')
+        mask = np.zeros((batch_size, image_size, image_size, classes)).astype('float')
+        
+        for i in range(c, c+batch_size):
+            
+            train_img = cv2.imread(os.path.join(img_folder,n[i]), cv2.IMREAD_GRAYSCALE)
+            train_mask = cv2.imread(os.path.join(mask_folder,n[i]), cv2.IMREAD_GRAYSCALE)
+            
+            augmented = aug(image=train_img, mask=train_mask)
+            train_img = augmented['image']
+            train_mask = augmented['mask']
+            
+            train_img = cv2.resize(train_img, (image_size, image_size))/255.      #change if image size changes
+            train_img = train_img.reshape([image_size, image_size,1])
+            
+            img[i-c] = train_img #add to array img[0] img [1] etc
+            
+            
+            train_mask = cv2.resize(train_mask, (image_size, image_size))
+            #train_mask = train_mask.ravel()
+            #train_mask = to_categorical(train_mask, num_classes=classes)
+            train_mask = train_mask.reshape([image_size, image_size, classes])
+            
+            mask[i-c] = train_mask
+            
+        c+=batch_size
+        if (c+batch_size>=len(os.listdir(img_folder))):
+            c=0
+            random.shuffle(n)
+        
+        yield img, mask
+        
+        
+        
+-----------------------------------------        
+## SECTION 6: DATA GENERATOR - TESTING
+# Only use when doing testing??
+
+def test_gen(img_folder, mask_folder, batch_size=51, image_size=image_size, classes=classes):
+    c=0
+    n=os.listdir(img_folder)
+    n.sort() #always evaluate in the same order 
+    #remove shuffling
+    while (True):
+        img = np.zeros((batch_size, image_size, image_size, 1)).astype('float')
+        mask = np.zeros((batch_size, image_size, image_size, classes)).astype('float')
+        
+        for i in range(c, c+batch_size):
+            
+            train_img = cv2.imread(os.path.join(img_folder,n[i]), cv2.IMREAD_GRAYSCALE)/255.
+            train_img = cv2.resize(train_img, (image_size, image_size))
+            train_img = train_img.reshape([image_size, image_size,1])
+            
+            img[i-c] = train_img #add to array img[0] img [1] etc
+            
+            train_mask = cv2.imread(os.path.join(mask_folder,n[i]), cv2.IMREAD_GRAYSCALE)
+            train_mask = cv2.resize(train_mask, (image_size, image_size))
+            train_mask = train_mask.ravel()
+            train_mask = to_categorical(train_mask, num_classes=classes)
+            train_mask = train_mask.reshape([image_size, image_size, classes])
+            
+            mask[i-c] = train_mask
+            
+        c+=batch_size
+        if (c+batch_size>=len(os.listdir(img_folder))):
+            c=0
+        
+        yield img, mask
 
 
 
