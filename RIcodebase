@@ -31,24 +31,10 @@ import np_utils
 
 # Segmentation Models
 import segmentation_models as sm
-from segmentation_models import Unet
-from segmentation_models import get_preprocessing
-# loss functions -->> DOUBLE CHECK THIS
-from segmentation_models.losses import jaccard_loss
-from segmentation_models.losses import dice_loss
-from segmentation_models.losses import binary_focal_loss
-from segmentation_models.losses import categorical_focal_loss
-from segmentation_models.losses import binary_crossentropy
-from segmentation_models.losses import categorical_crossentropy
-from segmentation_models.losses import bce_dice_loss                    #= binary_crossentropy + dice_loss
-from segmentation_models.losses import bce_jaccard_loss                 #= binary_crossentropy + jaccard_loss
-from segmentation_models.losses import cce_dice_loss                    #= categorical_crossentropy + dice_loss
-from segmentation_models.losses import cce_jaccard_loss                 #= categorical_crossentropy + jaccard_loss
-from segmentation_models.losses import binary_focal_dice_loss           #= binary_focal_loss + dice_loss
-from segmentation_models.losses import binary_focal_jaccard_loss        #= binary_focal_loss + jaccard_loss
-from segmentation_models.losses import categorical_focal_dice_loss      #= categorical_focal_loss + dice_loss
-from segmentation_models.losses import categorical_focal_jaccard_loss   #= categorical_focal_loss + jaccard_loss
-# performance metrics
+from segmentation_models import Unet, get_preprocessing
+    # loss functions -->> DOUBLE CHECK THIS
+from segmentation_models.losses import jaccard_loss, dice_loss, binary_focal_loss, categorical_focal_loss, binary_crossentropy, categorical_crossentropy, bce_dice_loss, bce_jaccard_loss, cce_dice_loss, cce_jaccard_loss, binary_focal_dice_loss, binary_focal_jaccard_loss, categorical_focal_dice_loss, categorical_focal_jaccard_loss  
+    # performance metrics
 from segmentation_models.metrics import iou_score
 
 # Glob
@@ -69,10 +55,8 @@ from sklearn.metrics import roc_curve, roc_auc_score, auc, jaccard_score
 from keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from keras.layers import Input, Dropout, Flatten, Dense, AveragePooling2D, Conv2D, GlobalAveragePooling2D, BatchNormalization, Flatten, Activation
 from keras.optimizers import Adam, SGD, Adagrad, Adadelta
-from keras.models import Model
-from keras.models import load_model
+from keras.models import Model, load_model
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping, ReduceLROnPlateau, CSVLogger
-from keras.metrics
 
 # Albumentations
 from albumentations import (Compose,
@@ -144,6 +128,7 @@ opt = Adagrad()                # recommended to leave defaults
 opt = Adadelta()               # recommends to leave defaults
 
 # Performance
+        # can specify (threshold=0.5)
 IOU = sm.metrics.IOUScore()
 FScore = sm.metrics.FScore()
 metrics=[IOU, FScore]
@@ -352,6 +337,47 @@ results = model.fit_generator(train_gen, epochs=epochs,
 # only call when testing
 
 model.evaluate_generator(test_generator, steps=1)
+
+
+
+
+-----------------------------------------        
+## SECTION 13: PLOT TRAINING RESULTS
+
+# Define TrainingLog path
+TrainingLog_path = f'TrainLog/{save_path}.out'
+
+# Read the TrainingLog data for plotting
+history = pd.read_csv(TrainingLog_path, sep=';')
+
+# Create function to plot training and validation IOU score and loss values
+    # to save plot figures: save = True, name = save_path
+def plot_history(history, save=False, name=None):
+    fig, (ax1, ax2) = plt.subplots(ncols=2)
+    ax1.plot(history['iou_score'])
+    ax1.plot(history['val_iou_score'])
+    ax1.title.set_text('Model Accuracy')
+    ax1.set_ylabel('Jaccard Score')
+    ax1.set_xlabel('Epoch')
+    ax1.legend(['Train', 'Validation'], loc='lower right')
+    
+    # Plot training & validation loss values
+    ax2.plot(history['loss'])
+    ax2.plot(history['val_loss'])
+    ax2.title.set_text('Model loss')
+    ax2.set_ylabel('Jaccard Loss')
+    ax2.set_xlabel('Epoch')
+    ax2.legend(['Train', 'Validation'], loc='upper right')
+    fig.tight_layout()
+    fig.show()
+    if save==False:
+        return
+    else:
+        fig.savefig(f'Figures/{name}.png')      
+    return
+
+# Show the plots
+plot_history(history, save = True, name = save_path)
 
 
 
