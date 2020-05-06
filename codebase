@@ -116,8 +116,8 @@ epochs = 100
   encoder_freeze = True    # set all layers of encoder as non-trainable
   encoder_freeze = False   # let all layers be trained
 # batch normalisation - CHOOSE 1
-  decoder_use_batchnorm=True  # BatchNormalisation layer between Conv2D and Activation layers is used
-  decoder_use_batchnorm=False # batchnorm not used
+  decoder_use_batchnorm = True  # BatchNormalisation layer between Conv2D and Activation layers is used
+  decoder_use_batchnorm = False # batchnorm not used
 
 # Loss functions - CHOOSE 1
 loss = sm.losses.JaccardLoss()
@@ -171,9 +171,13 @@ xtest_dir = 'Images/Test'
 # Save Path
 save_path = f'Unet.{backbone}.w{weight_initialisation}.b{batch_size}.e{epochs}.LR{learning_rate}.da{da}
 
+# Path where resulting weights will be saved
+weights_path = (f'Weights/{save_path}.h5')
+
 
 -----------------------------------------
 ## SECTION 4: AUGMENTATIONS
+    # adjust as needed
 
 aug = Compose([OneOf([
         ElasticTransform(p=1, alpha=200, sigma=200 * 0.05, alpha_affine=200 * 0.03),
@@ -287,17 +291,46 @@ test_generator = test_gen(xtest_dir, ytest_dir, image_size=image_size, batch_siz
 
 -----------------------------------------        
 ## SECTION 8: DEFINE MODEL CALLBACKS
+    # turn on/off as needed 
+    # can add verbose=1 if want to visualise progress bar
 
 # Checkpoint - save minimum val_loss found
 checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True, mode='min')
 
-# CSVLogger - save epoch results with "save_path" naming attached
+# CSVLogger - save epoch results with "save_path" naming attached --> potentially bring TrainingLog up to Paths like weights_path
 csv_logger = CSVLogger(f'TrainingLog/{save_path}.out', append=True, separator=';')
+
+# EarlyStopping - stop training if val_loss doesn't improve after # epochs (patience)
+earlystopping = EarlyStopping(monitor='val_loss', mode="min", patience=5, verbose=1)
+                      
+# Reduce Learning Rate - reduce learning rate if val_loss stops improving
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', mode='min', factor=0.2, patience=5, min_lr=0.001, verbose=1)
+
+
+
+# Collate callbacks 
+callbacks_list = [checkpoint, csv_logger, earlystopping, reduce_lr]
 
 
 
 -----------------------------------------        
-## SECTION 9: BEGIN TRAINING
+## SECTION 9: CREATE MODEL
+    # Comment out which one isn't being used
+
+# From scratch
+model = Unet(backbone_name=backbone, encoder_weights=encoder_weights, classes=classes, activation=activation, 
+        encoder_freeze=encoder_freeze, decoder_use_batchnorm = decoder_use_batchnorm, input_shape=(image_size, image_size, 1))
+
+# Transfer Learning
+base_model = Unet(backbone_name=backbone, encoder_weights=encoder_weights, classes=classes, activation=activation, 
+        encoder_freeze=encoder_freeze, decoder_use_batchnorm = decoder_use_batchnorm)
+inp = Input(shape=(image_size, image_size, 1))  # need new input layer for 1-channel medical data
+11 = Conv2D(3, (1, 1))(inp)   # map single channel to RGB channels
+out = base_model(11)
+model = Model(inp, out, name=base_model.name)
+
+-----------------------------------------        
+## SECTION 10: BEGIN TRAINING
 
 # Define number of training and validation images
 no_training_images = len(os.listdir(xtrain_dir))
