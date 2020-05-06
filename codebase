@@ -1,0 +1,180 @@
+-----------------------------------------
+## SECTION 1: IMPORT AND IMPORT FROM PACKAGES
+# Numpy
+import numpy as np
+from numpy.random import seed
+seed(440232650)
+
+# Pandas
+import pandas as pd
+
+# Matplotlib
+import matplotlib.pyplot as plt 
+
+# Seaborn
+import seaborn as sns 
+
+# Warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+# TensorFlow
+import tensorflow
+from tensorflow import set_random_seed
+set_random_seed(440232650)
+
+# Random
+import os, random, cv2, h5py, requests
+
+# Utils
+import np_utils
+
+# Segmentation Models
+import segmentation_models as sm
+from segmentation_models import Unet
+from segmentation_models import get_preprocessing
+# loss functions -->> DOUBLE CHECK THIS
+from segmentation_models.losses import jaccard_loss
+from segmentation_models.losses import dice_loss
+from segmentation_models.losses import binary_focal_loss
+from segmentation_models.losses import categorical_focal_loss
+from segmentation_models.losses import binary_crossentropy
+from segmentation_models.losses import categorical_crossentropy
+from segmentation_models.losses import bce_dice_loss                    #= binary_crossentropy + dice_loss
+from segmentation_models.losses import bce_jaccard_loss                 #= binary_crossentropy + jaccard_loss
+from segmentation_models.losses import cce_dice_loss                    #= categorical_crossentropy + dice_loss
+from segmentation_models.losses import cce_jaccard_loss                 #= categorical_crossentropy + jaccard_loss
+from segmentation_models.losses import binary_focal_dice_loss           #= binary_focal_loss + dice_loss
+from segmentation_models.losses import binary_focal_jaccard_loss        #= binary_focal_loss + jaccard_loss
+from segmentation_models.losses import categorical_focal_dice_loss      #= categorical_focal_loss + dice_loss
+from segmentation_models.losses import categorical_focal_jaccard_loss   #= categorical_focal_loss + jaccard_loss
+# performance metrics
+from segmentation_models.metrics import iou_score
+
+# Glob
+from glob import glob
+
+# Pillow
+from PIL import Image
+
+# IO
+form io import BytesIO
+
+# SKLearn
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve, roc_auc_score, auc, jaccard_score
+
+# Keras
+from keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
+from keras.layers import Input, Dropout, Flatten, Dense, AveragePooling2D, Conv2D, GlobalAveragePooling2D, BatchNormalization, Flatten, Activation
+from keras.optimizers import Adam, SGD
+from keras.models import Model
+from keras.utils import to_categorical
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping, ReduceLROnPlateau, CSVLogger
+
+# Albumentations
+from albumentations import (Compose,
+    HorizontalFlip,
+    ElasticTransform,
+    GridDistortion, 
+    OpticalDistortion,
+    OneOf,
+    CLAHE,
+    RandomBrightnessContrast,    
+    RandomGamma    
+)
+
+
+-----------------------------------------
+## SECTION 2: DEFINE VARIABLES 
+
+# GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = 1
+
+# Weight initialisation - CHOOSE 1
+weight_initialisation = RI   # randomly initialised
+weight_initialisation = TL   # transfer learning
+
+# Model variables
+backbone = vgg16
+image_size = 256    # call image_size as variable for both h and w 
+classes = 1
+batch_size = 8
+epochs = 100
+# activation - CHOOSE 1
+  activation = sigmoid    # use sigmoid for binary
+  activation = softmax
+  activation = linear
+# encoder weights - CHOOSE 1
+  encoder_weights = None        #random initialisation
+  encoder_weights = imagenet    #pre-training on ImageNet
+# encoder freeze - CHOOSE 1
+  encoder_freeze = True    # set all layers of encoder as non-trainable
+  encoder_freeze = False   # let all layers be trained
+# batch normalisation - CHOOSE 1
+  decoder_use_batchnorm=True  # BatchNormalisation layer between Conv2D and Activation layers is used
+  decoder_use_batchnorm=False # batchnorm not used
+
+# Loss functions - CHOOSE 1
+loss = sm.losses.JaccardLoss()
+loss = sm.losses.DiceLoss()
+loss = sm.losses.BinaryFocalLoss()
+loss = sm.losses.CategoricalFocalLoss()
+loss = sm.losses.BinaryCELoss()
+loss = sm.losses.CategoricalCELoss()
+# Loss name - CHOOSE 1
+  loss_name = 'JaccardLoss'
+  loss_name = 'DiceLoss'
+  loss_name = 'BinaryFocalLoss'
+  loss_name = 'CategoricalFocalLoss'
+  loss_name = 'BinaryCELoss'
+  loss_name = 'CategoricalCELoss'
+
+# Learning rate and Betas
+learning_rate = 0.0001
+beta_1 = 0.9
+beta_2 = 0.999
+
+# Optimiser - CHOOSE 1
+opt = Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, amsgrad=False)
+
+# Performance
+IOU = sm.metrics.IOUScore()
+FScore = sm.metrics.FScore()
+metrics=[IOU, FScore]
+
+# Augmentations performed? - CHOOSE 1
+aug = yes
+aug = no
+
+
+
+-----------------------------------------
+## SECTION 3: DEFINE PATHS
+
+# Training
+ytrain_dir = 'Masks/Train'
+xtrain_dir = 'Images/Train'
+
+# Validation
+yval_dir = 'Masks/Val'
+xval_dir = 'Images/Val'
+
+# Test
+ytest_dir = 'Masks/Test'
+xtest_dir = 'Images/Test'
+
+# Image and Mask folder --> CHECK THIS
+img_folder = xtrain_dir
+mask_folder = ytrain_dir
+
+# Save Path
+save_path = f'Unet.{backbone}.w{weight_initialisation}.b{batch_size}.e{epochs}.LR{learning_rate}.Aug{aug}
+
+
+
+
+
+
+
