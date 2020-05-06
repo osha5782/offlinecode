@@ -148,8 +148,8 @@ FScore = sm.metrics.FScore()
 metrics=[IOU, FScore]
 
 # Augmentations performed? - CHOOSE 1
-aug = yes
-aug = no
+da = Y
+da = N
 
 
 -----------------------------------------
@@ -167,13 +167,9 @@ xval_dir = 'Images/Val'
 ytest_dir = 'Masks/Test'
 xtest_dir = 'Images/Test'
 
-# Image and Mask folder --> CHECK THIS
-img_folder = xtrain_dir
-mask_folder = ytrain_dir
 
 # Save Path
-save_path = f'Unet.{backbone}.w{weight_initialisation}.b{batch_size}.e{epochs}.LR{learning_rate}.Aug{aug}
-
+save_path = f'Unet.{backbone}.w{weight_initialisation}.b{batch_size}.e{epochs}.LR{learning_rate}.da{da}
 
 
 -----------------------------------------
@@ -189,8 +185,9 @@ aug = Compose([OneOf([
 
 
 -----------------------------------------
-## SECTION 5: DATA GENERATOR - TRAINING
+## SECTION 5: DATA GENERATOR FUNCTION - TRAINING + VALIDATION
 
+# img_folder and mask_folder will be replaced with xtrain_dir/xval_dir and ytrain_dir/yval_dir when data generated in Section 7
 def data_gen(img_folder, mask_folder, batch_size=batch_size, image_size=image_size, classes=classes):
     c=0
     n=os.listdir(img_folder)
@@ -205,6 +202,7 @@ def data_gen(img_folder, mask_folder, batch_size=batch_size, image_size=image_si
             train_img = cv2.imread(os.path.join(img_folder,n[i]), cv2.IMREAD_GRAYSCALE)
             train_mask = cv2.imread(os.path.join(mask_folder,n[i]), cv2.IMREAD_GRAYSCALE)
             
+            # comment this out if not augmenting
             augmented = aug(image=train_img, mask=train_mask)
             train_img = augmented['image']
             train_mask = augmented['mask']
@@ -216,8 +214,6 @@ def data_gen(img_folder, mask_folder, batch_size=batch_size, image_size=image_si
             
             
             train_mask = cv2.resize(train_mask, (image_size, image_size))
-            #train_mask = train_mask.ravel()
-            #train_mask = to_categorical(train_mask, num_classes=classes)
             train_mask = train_mask.reshape([image_size, image_size, classes])
             
             mask[i-c] = train_mask
@@ -232,9 +228,10 @@ def data_gen(img_folder, mask_folder, batch_size=batch_size, image_size=image_si
         
         
 -----------------------------------------        
-## SECTION 6: DATA GENERATOR - TESTING
-# Only use when doing testing??
+## SECTION 6: DATA GENERATOR FUNCTION - TESTING
+    # Only call when testing
 
+# define batch_size as number of images in test folder (otherwise issuse with shuffling)
 def test_gen(img_folder, mask_folder, batch_size=51, image_size=image_size, classes=classes):
     c=0
     n=os.listdir(img_folder)
@@ -265,6 +262,47 @@ def test_gen(img_folder, mask_folder, batch_size=51, image_size=image_size, clas
             c=0
         
         yield img, mask
+
+
+        
+-----------------------------------------        
+## SECTION 7: GENERATE THE DATA
+
+# Generate training data (known)
+train_gen = data_gen(xtrain_dir, ytrain_dir, image_size=image_size, batch_size=batch_size)
+
+# Generate validation data (known)
+val_gen = data_gen(xval_dir, yval_dir, image_size=image_size, batch_size=batch_size)
+
+# Predicted generation for testing only -->
+    # Generate predicted validation data (predictions)
+    # update batch number so it matches house many images there are in the folder 
+val_pred_generator = test_gen(xval_dir, yval_dir, image_size=image_size, batch_size=51)
+
+    # Generate test data (predicted)
+    # update batch number so it matches house many images there are in the folder 
+test_generator = test_gen(xtest_dir, ytest_dir, image_size=image_size, batch_size=51)
+
+
+
+-----------------------------------------        
+## SECTION 8: DEFINE MODEL CALLBACKS
+
+# Checkpoint - save minimum val_loss found
+checkpoint = ModelCheckpoint(weights_path, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True, mode='min')
+
+# CSVLogger - save epoch results with "save_path" naming attached
+csv_logger = CSVLogger(f'TrainingLog/{save_path}.out', append=True, separator=';')
+
+
+
+-----------------------------------------        
+## SECTION 9: BEGIN TRAINING
+
+# Define number of training and validation images
+no_training_images = len(os.listdir(xtrain_dir))
+no_val_images = len(os.listdir(xval_dir))
+
 
 
 
