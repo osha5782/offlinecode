@@ -101,8 +101,8 @@ decoder_use_batchnorm = True  # BatchNormalisation layer between Conv2D and Acti
 decoder_use_batchnorm = False # batchnorm not used
 
 # Loss functions - CHOOSE 1
-loss = sm.losses.JaccardLoss()
-loss = sm.losses.DiceLoss()
+loss = sm.losses.JaccardLoss()      # similar to dice loss 
+loss = sm.losses.DiceLoss()         # most commonly used
 loss = sm.losses.BinaryFocalLoss()
 loss = sm.losses.CategoricalFocalLoss()
 loss = sm.losses.BinaryCELoss()
@@ -130,7 +130,7 @@ opt = Adadelta()               # recommends to leave defaults
 # Performance
         # can specify (threshold=0.5)
 IOU = sm.metrics.IOUScore()
-FScore = sm.metrics.FScore()
+FScore = sm.metrics.FScore()    # dice coefficient
 metrics=[IOU, FScore]
 
 # Augmentations performed? - CHOOSE 1
